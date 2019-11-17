@@ -17,7 +17,7 @@ import (
 	"github.com/sensepost/ruler/forms"
 	"github.com/sensepost/ruler/mapi"
 	"github.com/sensepost/ruler/utils"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 //globals
@@ -40,15 +40,15 @@ func exit(err error) {
 //function to perform an autodiscover
 func discover(c *cli.Context) error {
 
-	if c.GlobalString("domain") == "" {
+	if c.String("domain") == "" {
 		return fmt.Errorf("Required param --domain is missing")
 	}
 
-	if c.Bool("dump") == true && (c.GlobalString("username") == "" && c.GlobalString("email") == "") {
+	if c.Bool("dump") == true && (c.String("username") == "" && c.String("email") == "") {
 		return fmt.Errorf("--dump requires credentials to be set")
 	}
 
-	if c.Bool("dump") == false && (c.GlobalString("username") != "" || c.GlobalString("email") != "") {
+	if c.Bool("dump") == false && (c.String("username") != "" || c.String("email") != "") {
 		return fmt.Errorf("Credentials supplied, but no --dump. No credentials required for URL discovery. Dumping requires credentials to be set")
 	}
 
@@ -57,7 +57,7 @@ func discover(c *cli.Context) error {
 	}
 
 	var err error
-	if c.Bool("dump") == true && c.GlobalString("password") == "" && c.GlobalString("hash") == "" {
+	if c.Bool("dump") == true && c.String("password") == "" && c.String("hash") == "" {
 		fmt.Printf("Password: ")
 		var pass []byte
 		pass, err = gopass.GetPasswd()
@@ -67,32 +67,32 @@ func discover(c *cli.Context) error {
 		}
 		config.Pass = string(pass)
 	} else {
-		config.Pass = c.GlobalString("password")
-		if config.NTHash, err = hex.DecodeString(c.GlobalString("hash")); err != nil {
+		config.Pass = c.String("password")
+		if config.NTHash, err = hex.DecodeString(c.String("hash")); err != nil {
 			return fmt.Errorf("Invalid hash provided. Hex decode failed")
 		}
 	}
 
 	//setup our autodiscover service
-	config.Domain = c.GlobalString("domain")
-	if c.GlobalString("username") == "" {
+	config.Domain = c.String("domain")
+	if c.String("username") == "" {
 		config.User = "nosuchuser"
 	} else {
-		config.User = c.GlobalString("username")
+		config.User = c.String("username")
 	}
-	if c.GlobalString("email") == "" {
+	if c.String("email") == "" {
 		config.Email = "nosuchemail"
 	} else {
-		config.Email = c.GlobalString("email")
+		config.Email = c.String("email")
 	}
-	config.Basic = c.GlobalBool("basic")
-	config.Insecure = c.GlobalBool("insecure")
-	config.Verbose = c.GlobalBool("verbose")
-	config.Admin = c.GlobalBool("admin")
-	config.RPCEncrypt = !c.GlobalBool("noencrypt")
+	config.Basic = c.Bool("basic")
+	config.Insecure = c.Bool("insecure")
+	config.Verbose = c.Bool("verbose")
+	config.Admin = c.Bool("admin")
+	config.RPCEncrypt = !c.Bool("noencrypt")
 	config.CookieJar, _ = cookiejar.New(nil)
-	config.Proxy = c.GlobalString("proxy")
-	url := c.GlobalString("url")
+	config.Proxy = c.String("proxy")
+	url := c.String("url")
 
 	if url == "" {
 		url = config.Domain
@@ -152,19 +152,19 @@ func brute(c *cli.Context) error {
 		return fmt.Errorf("Either --passwords or --userpass required")
 
 	}
-	if c.GlobalString("domain") == "" && c.GlobalString("url") == "" && c.GlobalBool("o365") == false {
+	if c.String("domain") == "" && c.String("url") == "" && c.Bool("o365") == false {
 		return fmt.Errorf("Either --domain or --url required")
 	}
 
 	utils.Info.Println("Starting bruteforce")
-	domain := c.GlobalString("domain")
-	if c.GlobalString("url") != "" {
-		domain = c.GlobalString("url")
+	domain := c.String("domain")
+	if c.String("url") != "" {
+		domain = c.String("url")
 	}
-	if c.GlobalBool("o365") == true {
+	if c.Bool("o365") == true {
 		domain = "https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml"
 	}
-	if e := autodiscover.Init(domain, c.String("users"), c.String("passwords"), c.String("userpass"), c.GlobalString("proxy"), c.GlobalBool("basic"), c.GlobalBool("insecure"), c.Bool("stop"), c.Bool("verbose"), c.Int("attempts"), c.Int("delay"), c.Int("threads")); e != nil {
+	if e := autodiscover.Init(domain, c.String("users"), c.String("passwords"), c.String("userpass"), c.String("proxy"), c.Bool("basic"), c.Bool("insecure"), c.Bool("stop"), c.Bool("verbose"), c.Int("attempts"), c.Int("delay"), c.Int("threads")); e != nil {
 		return e
 	}
 
@@ -287,7 +287,7 @@ func sendMessage(subject, body string) error {
 func connect(c *cli.Context) error {
 	var err error
 	//if no password or hash was supplied, read from stdin
-	if c.GlobalString("password") == "" && c.GlobalString("hash") == "" && c.GlobalString("config") == "" {
+	if c.String("password") == "" && c.String("hash") == "" && c.String("config") == "" {
 		fmt.Printf("Password: ")
 		var pass []byte
 		pass, err = gopass.GetPasswd()
@@ -297,30 +297,30 @@ func connect(c *cli.Context) error {
 		}
 		config.Pass = string(pass)
 	} else {
-		config.Pass = c.GlobalString("password")
-		if config.NTHash, err = hex.DecodeString(c.GlobalString("hash")); err != nil {
+		config.Pass = c.String("password")
+		if config.NTHash, err = hex.DecodeString(c.String("hash")); err != nil {
 			return fmt.Errorf("Invalid hash provided. Hex decode failed")
 		}
 	}
 	//setup our autodiscover service
-	config.Domain = c.GlobalString("domain")
-	config.User = c.GlobalString("username")
-	config.Email = c.GlobalString("email")
-	config.Basic = c.GlobalBool("basic")
-	config.Insecure = c.GlobalBool("insecure")
-	config.Verbose = c.GlobalBool("verbose")
-	config.Admin = c.GlobalBool("admin")
-	config.RPCEncrypt = !c.GlobalBool("noencrypt")
+	config.Domain = c.String("domain")
+	config.User = c.String("username")
+	config.Email = c.String("email")
+	config.Basic = c.Bool("basic")
+	config.Insecure = c.Bool("insecure")
+	config.Verbose = c.Bool("verbose")
+	config.Admin = c.Bool("admin")
+	config.RPCEncrypt = !c.Bool("noencrypt")
 	config.CookieJar, _ = cookiejar.New(nil)
-	config.Proxy = c.GlobalString("proxy")
+	config.Proxy = c.String("proxy")
 	//add supplied cookie to the cookie jar
-	if c.GlobalString("cookie") != "" {
+	if c.String("cookie") != "" {
 		//split into cookies and then into name : value
-		cookies := strings.Split(c.GlobalString("cookie"), ";")
+		cookies := strings.Split(c.String("cookie"), ";")
 		var cookieJarTmp []*http.Cookie
 		var cdomain string
 		//split and get the domain from the email
-		if eparts := strings.Split(c.GlobalString("email"), "@"); len(eparts) == 2 {
+		if eparts := strings.Split(c.String("email"), "@"); len(eparts) == 2 {
 			cdomain = eparts[1]
 		} else {
 			return fmt.Errorf("[x] Invalid email address")
@@ -343,13 +343,13 @@ func connect(c *cli.Context) error {
 	config.CookieJar, _ = cookiejar.New(nil)
 
 	//add supplied cookie to the cookie jar
-	if c.GlobalString("cookie") != "" {
+	if c.String("cookie") != "" {
 		//split into cookies and then into name : value
-		cookies := strings.Split(c.GlobalString("cookie"), ";")
+		cookies := strings.Split(c.String("cookie"), ";")
 		var cookieJarTmp []*http.Cookie
 		var cdomain string
 		//split and get the domain from the email
-		if eparts := strings.Split(c.GlobalString("email"), "@"); len(eparts) == 2 {
+		if eparts := strings.Split(c.String("email"), "@"); len(eparts) == 2 {
 			cdomain = eparts[1]
 		} else {
 			return fmt.Errorf("Invalid email address")
@@ -369,9 +369,9 @@ func connect(c *cli.Context) error {
 		config.CookieJar.SetCookies(u, cookieJarTmp)
 	}
 
-	url := c.GlobalString("url")
+	url := c.String("url")
 
-	if c.GlobalBool("o365") == true {
+	if c.Bool("o365") == true {
 		url = "https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml"
 	}
 
@@ -385,9 +385,9 @@ func connect(c *cli.Context) error {
 	//try connect to MAPI/HTTP first -- this is faster and the code-base is more stable
 	//unless of course the global "RPC" flag has been set, which specifies we should just use
 	//RPC/HTTP from the get-go
-	if c.GlobalString("config") != "" {
+	if c.String("config") != "" {
 		var yamlConfig utils.YamlConfig
-		if yamlConfig, err = utils.ReadYml(c.GlobalString("config")); err != nil {
+		if yamlConfig, err = utils.ReadYml(c.String("config")); err != nil {
 			utils.Error.Println("Invalid Config file.")
 			return err
 		}
@@ -433,13 +433,13 @@ func connect(c *cli.Context) error {
 		}
 		userDN = yamlConfig.UserDN
 
-	} else if !c.GlobalBool("rpc") {
+	} else if !c.Bool("rpc") {
 
 		if config.User == "" && config.Email == "" {
 			return fmt.Errorf("Missing username and/or email argument. Use --domain (if needed), --username and --email or the --config")
 		}
 
-		if c.GlobalBool("nocache") == false { //unless user specified nocache, check cache for existing autodiscover
+		if c.Bool("nocache") == false { //unless user specified nocache, check cache for existing autodiscover
 			resp = autodiscover.CheckCache(config.Email)
 		}
 		if resp == nil {
@@ -461,7 +461,7 @@ func connect(c *cli.Context) error {
 				return fmt.Errorf("Both MAPI/HTTP and RPC/HTTP failed. Are the credentials valid? \n%s", resp.Response.Error)
 			}
 
-			if c.GlobalBool("nocache") == false {
+			if c.Bool("nocache") == false {
 				autodiscover.CreateCache(config.Email, rawAutodiscover) //store the autodiscover for future use
 			}
 		} else {
@@ -470,7 +470,7 @@ func connect(c *cli.Context) error {
 			utils.Trace.Println("MAPI AddressBook URL found: ", abkURL)
 
 			//mapi.Init(&config, userDN, mapiURL, abkURL, mapi.HTTP)
-			if c.GlobalBool("nocache") == false {
+			if c.Bool("nocache") == false {
 				autodiscover.CreateCache(config.Email, rawAutodiscover) //store the autodiscover for future use
 			}
 		}
@@ -482,7 +482,7 @@ func connect(c *cli.Context) error {
 		}
 
 		utils.Trace.Println("RPC/HTTP forced, trying RPC/HTTP")
-		if c.GlobalBool("nocache") == false { //unless user specified nocache, check cache for existing autodiscover
+		if c.Bool("nocache") == false { //unless user specified nocache, check cache for existing autodiscover
 			resp = autodiscover.CheckCache(config.Email)
 		}
 
@@ -493,7 +493,7 @@ func connect(c *cli.Context) error {
 
 		userDN = resp.Response.User.LegacyDN
 
-		if c.GlobalBool("nocache") == false {
+		if c.Bool("nocache") == false {
 			autodiscover.CreateCache(config.Email, rawAutodiscover) //store the autodiscover for future use
 		}
 	}
@@ -1125,99 +1125,104 @@ func checkLastSent() error {
 
 func main() {
 
-	app := cli.NewApp()
-
-	app.Name = "ruler"
-	app.Usage = "A tool to abuse Exchange Services"
-	app.Version = "2.2.1"
-	app.Author = "Etienne Stalmans <etienne@sensepost.com>, @_staaldraad"
-	app.Description = `         _
+	app := &cli.App{
+        Name: "ruler",
+        Usage: "A tool to abuse Exchange Services",
+        Version: "2.2.2",
+        Authors: []*cli.Author{
+            &cli.Author{
+                Name: "Etienne Stalmans, @_staaldraad",
+                Email: "etienne@sensepost.com",
+            },
+        },
+        Description: `         _
  _ __ _   _| | ___ _ __
 | '__| | | | |/ _ \ '__|
 | |  | |_| | |  __/ |
 |_|   \__,_|_|\___|_|
 
-A tool by @_staaldraad from @sensepost to abuse Exchange Services.`
+A tool by @_staaldraad from @sensepost to abuse Exchange Services.`,
+    }
 
 	app.Flags = []cli.Flag{
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "domain,d",
 			Value: "",
 			Usage: "A domain for the user (optional in most cases. Otherwise allows: domain\\username)",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "o365",
 			Usage: "We know the target is on Office365, so authenticate directly against that.",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "username,u",
 			Value: "",
 			Usage: "A valid username",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "password,p",
 			Value: "",
 			Usage: "A valid password",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "hash",
 			Value: "",
 			Usage: "A NT hash for pass the hash",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "email,e",
 			Value: "",
 			Usage: "The target's email address",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "cookie",
 			Value: "",
 			Usage: "Any third party cookies such as SSO that are needed",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "config",
 			Value: "",
 			Usage: "The path to a config file to use",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "url",
 			Value: "",
 			Usage: "If you know the Autodiscover URL or the autodiscover service is failing. Requires full URI, https://autodisc.d.com/autodiscover/autodiscover.xml",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "proxy",
 			Value: "",
 			Usage: "If you need to use an upstream proxy. Works with https://user:pass@ip:port or https://ip:port",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "insecure,k",
 			Usage: "Ignore server SSL certificate errors",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "noencrypt",
 			Usage: "Don't use encryption the RPC level - some environments require this",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "basic,b",
 			Usage: "Force Basic authentication",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "admin",
 			Usage: "Login as an admin",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "nocache",
 			Usage: "Don't use the cached autodiscover record",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "rpc",
 			Usage: "Force RPC/HTTP rather than MAPI/HTTP",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "verbose",
 			Usage: "Be verbose and show some of thei inner workings",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "debug",
 			Usage: "Be print debug info",
 		},
@@ -1236,37 +1241,37 @@ A tool by @_staaldraad from @sensepost to abuse Exchange Services.`
 		return nil
 	}
 
-	app.Commands = []cli.Command{
+	app.Commands = []*cli.Command{
 		{
 			Name:    "add",
 			Aliases: []string{"a"},
 			Usage:   "add a new rule",
 			Flags: []cli.Flag{
-				cli.StringFlag{
+				&cli.StringFlag{
 					Name:  "name,n",
 					Value: "Delete Spam",
 					Usage: "A name for our rule",
 				},
-				cli.StringFlag{
+				&cli.StringFlag{
 					Name:  "trigger,t",
 					Value: "Hey John",
 					Usage: "A trigger word or phrase - this is going to be the subject of our trigger email",
 				},
-				cli.StringFlag{
+				&cli.StringFlag{
 					Name:  "location,l",
 					Value: "C:\\Windows\\System32\\calc.exe",
 					Usage: "The location of our application to launch. Typically a WEBDAV URI",
 				},
-				cli.BoolFlag{
+				&cli.BoolFlag{
 					Name:  "send,s",
 					Usage: "Trigger the rule by sending an email to the target",
 				},
-				cli.StringFlag{
+				&cli.StringFlag{
 					Name:  "body,b",
 					Value: "**Automated account check - please ignore**\r\n\r\nMicrosoft Exchange has run an automated test on your account.\r\nEverything seems to be configured correctly.",
 					Usage: "The email body you may wish to use",
 				},
-				cli.StringFlag{
+				&cli.StringFlag{
 					Name:  "subject",
 					Value: "",
 					Usage: "The subject you wish to use, this should contain your trigger word.",
@@ -1295,12 +1300,12 @@ A tool by @_staaldraad from @sensepost to abuse Exchange Services.`
 			Aliases: []string{"r"},
 			Usage:   "delete an existing rule",
 			Flags: []cli.Flag{
-				cli.StringFlag{
+				&cli.StringFlag{
 					Name:  "id",
 					Value: "",
 					Usage: "The ID of the rule to delete",
 				},
-				cli.StringFlag{
+				&cli.StringFlag{
 					Name:  "name",
 					Value: "",
 					Usage: "The name of the rule to delete",
@@ -1344,7 +1349,7 @@ A tool by @_staaldraad from @sensepost to abuse Exchange Services.`
 			Aliases: []string{"c"},
 			Usage:   "Check if the credentials work and we can interact with the mailbox",
 			Flags: []cli.Flag{
-				cli.BoolFlag{
+				&cli.BoolFlag{
 					Name:  "last",
 					Usage: "Returns information about the last client used to send an email",
 				},
@@ -1370,12 +1375,12 @@ A tool by @_staaldraad from @sensepost to abuse Exchange Services.`
 			Aliases: []string{"s"},
 			Usage:   "Send an email to trigger an existing rule. This uses the target user's own account.",
 			Flags: []cli.Flag{
-				cli.StringFlag{
+				&cli.StringFlag{
 					Name:  "subject,s",
 					Value: "",
 					Usage: "A subject to use, this should contain our trigger word",
 				},
-				cli.StringFlag{
+				&cli.StringFlag{
 					Name:  "body,b",
 					Value: "**Automated account check - please ignore**\r\nMicrosoft Exchange has run an automated test on your account.\r\nEverything seems to be configured correctly.",
 					Usage: "The email body you may wish to use",
@@ -1401,15 +1406,15 @@ A tool by @_staaldraad from @sensepost to abuse Exchange Services.`
 			Aliases: []string{"u"},
 			Usage:   "Just run the autodiscover service to find the authentication point",
 			Flags: []cli.Flag{
-				cli.BoolFlag{
+				&cli.BoolFlag{
 					Name:  "dump,d",
 					Usage: "Dump the autodiscover record to a text file (this needs credentails)",
 				},
-				cli.BoolFlag{
+				&cli.BoolFlag{
 					Name:  "mapi,m",
 					Usage: "Dump the MAPI version of the autodiscover record",
 				},
-				cli.StringFlag{
+				&cli.StringFlag{
 					Name:  "out,o",
 					Value: "",
 					Usage: "The file to write to",
@@ -1429,41 +1434,41 @@ A tool by @_staaldraad from @sensepost to abuse Exchange Services.`
 			Aliases: []string{"b"},
 			Usage:   "Do a bruteforce attack against the autodiscover service to find valid username/passwords",
 			Flags: []cli.Flag{
-				cli.StringFlag{
+				&cli.StringFlag{
 					Name:  "users,u",
 					Value: "",
 					Usage: "Filename for a username list (one name per line)",
 				},
-				cli.StringFlag{
+				&cli.StringFlag{
 					Name:  "passwords,p",
 					Value: "",
 					Usage: "Filename for a password list (one password per line)",
 				},
-				cli.StringFlag{
+				&cli.StringFlag{
 					Name:  "userpass",
 					Value: "",
 					Usage: "Filename for a username:password list (one per line)",
 				},
-				cli.IntFlag{
+				&cli.IntFlag{
 					Name:  "attempts,a",
 					Value: 3,
 					Usage: "Number of attempts before delay",
 				},
-				cli.IntFlag{
+				&cli.IntFlag{
 					Name:  "threads,t",
 					Value: 3,
 					Usage: "Number of concurrent attempts. Reduce if mutex issues appear.",
 				},
-				cli.IntFlag{
+				&cli.IntFlag{
 					Name:  "delay,d",
 					Value: 5,
 					Usage: "Number of minutes to delay between attempts",
 				},
-				cli.BoolFlag{
+				&cli.BoolFlag{
 					Name:  "stop,s",
 					Usage: "Stop on success",
 				},
-				cli.BoolFlag{
+				&cli.BoolFlag{
 					Name:  "verbose,v",
 					Usage: "Display each attempt",
 				},
@@ -1480,7 +1485,7 @@ A tool by @_staaldraad from @sensepost to abuse Exchange Services.`
 		{
 			Name:  "abk",
 			Usage: "Interact with the Global Address Book",
-			Subcommands: []cli.Command{
+			Subcommands: []*cli.Command{
 				{
 					Name:  "list",
 					Usage: "list the entries of the GAL",
@@ -1499,7 +1504,7 @@ A tool by @_staaldraad from @sensepost to abuse Exchange Services.`
 					Name:  "dump",
 					Usage: "dump the entries of the GAL and save to local file",
 					Flags: []cli.Flag{
-						cli.StringFlag{
+						&cli.StringFlag{
 							Name:  "output,o",
 							Value: "",
 							Usage: "File to save the GAL to",
@@ -1524,44 +1529,44 @@ A tool by @_staaldraad from @sensepost to abuse Exchange Services.`
 		{
 			Name:  "form",
 			Usage: "Interact with the forms function.",
-			Subcommands: []cli.Command{
+			Subcommands: []*cli.Command{
 				{
 					Name:  "add",
 					Usage: "creates a new form. ",
 					Flags: []cli.Flag{
-						cli.StringFlag{
+						&cli.StringFlag{
 							Name:  "suffix",
 							Value: "pew",
 							Usage: "A 3 character suffix for the form. Defaults to pew",
 						},
-						cli.StringFlag{
+						&cli.StringFlag{
 							Name:  "command,c",
 							Value: "",
 							Usage: "The command to execute.",
 						},
-						cli.StringFlag{
+						&cli.StringFlag{
 							Name:  "input,i",
 							Value: "",
 							Usage: "A path to a file containing the command to execute. This takes precidence over 'command'",
 						},
-						cli.BoolFlag{
+						&cli.BoolFlag{
 							Name:  "send,s",
 							Usage: "Trigger the form once it's been created.",
 						},
-						cli.BoolFlag{
+						&cli.BoolFlag{
 							Name:  "raw",
 							Usage: "Use a blank template allowing Raw VBScript.",
 						},
-						cli.BoolFlag{
+						&cli.BoolFlag{
 							Name:  "rule,r",
 							Usage: "Trigger the form with a rule. This will add a new rule!",
 						},
-						cli.StringFlag{
+						&cli.StringFlag{
 							Name:  "body,b",
 							Value: "This message cannot be displayed in the previewer.\n\n\n\n\n",
 							Usage: "The email body you may wish to use",
 						},
-						cli.StringFlag{
+						&cli.StringFlag{
 							Name:  "subject",
 							Value: "Invoice [Confidential]",
 							Usage: "The subject you wish to use, this should contain your trigger word.",
@@ -1590,22 +1595,22 @@ A tool by @_staaldraad from @sensepost to abuse Exchange Services.`
 					Name:  "send",
 					Usage: "send an email to an existing form and trigger it",
 					Flags: []cli.Flag{
-						cli.StringFlag{
+						&cli.StringFlag{
 							Name:  "suffix,s",
 							Value: "",
 							Usage: "The suffix used when creating the form. This must be the same as the value used when the form was created.",
 						},
-						cli.StringFlag{
+						&cli.StringFlag{
 							Name:  "body,b",
 							Value: "This message cannot be displayed in the previewer.\n\n\n\n\n",
 							Usage: "The email body you may wish to use",
 						},
-						cli.StringFlag{
+						&cli.StringFlag{
 							Name:  "subject",
 							Value: "Invoice [Confidential]",
 							Usage: "The subject you wish to use, this should contain your trigger word.",
 						},
-						cli.StringFlag{
+						&cli.StringFlag{
 							Name:  "target",
 							Value: "",
 							Usage: "Send the email to another account.",
@@ -1630,7 +1635,7 @@ A tool by @_staaldraad from @sensepost to abuse Exchange Services.`
 					Name:  "delete",
 					Usage: "delete an existing form",
 					Flags: []cli.Flag{
-						cli.StringFlag{
+						&cli.StringFlag{
 							Name:  "suffix,s",
 							Value: "",
 							Usage: "The suffix used when creating the form. This must be the same as the value used when the form was created.",
@@ -1672,12 +1677,12 @@ A tool by @_staaldraad from @sensepost to abuse Exchange Services.`
 		{
 			Name:  "homepage",
 			Usage: "Interact with the homepage function.",
-			Subcommands: []cli.Command{
+			Subcommands: []*cli.Command{
 				{
 					Name:  "add",
 					Usage: "creates a new homepage. ",
 					Flags: []cli.Flag{
-						cli.StringFlag{
+						&cli.StringFlag{
 							Name:  "url,u",
 							Value: "",
 							Usage: "The location where the page is stored",
@@ -1740,11 +1745,11 @@ A tool by @_staaldraad from @sensepost to abuse Exchange Services.`
 			Name:  "search",
 			Usage: "Search for items",
 			Flags: []cli.Flag{
-				cli.BoolFlag{
+				&cli.BoolFlag{
 					Name:  "subject",
 					Usage: "Search only in the subject",
 				},
-				cli.StringFlag{
+				&cli.StringFlag{
 					Name:  "term",
 					Value: "",
 					Usage: "The term to search for",
